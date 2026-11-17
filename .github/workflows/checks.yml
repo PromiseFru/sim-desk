@@ -1,0 +1,46 @@
+name: Checks
+
+on:
+  pull_request:
+    branches:
+      - develop
+      - main
+  push:
+    branches:
+      - develop
+
+concurrency:
+  group: checks-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Hooks and tests
+    # Runs on Python 3.12 (Ubuntu 24.04's system Python), the oldest supported version.
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install system packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            dbus python3-gi python3-venv gir1.2-modemmanager-1.0
+
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
+          restore-keys: pre-commit-
+
+      - name: Set up
+        run: make setup
+
+      - name: Run hooks
+        run: venv/bin/pre-commit run --all-files --show-diff-on-failure
+
+      - name: Run tests
+        run: make coverage

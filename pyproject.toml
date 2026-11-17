@@ -1,0 +1,62 @@
+[project]
+name = "sim-desk"
+version = "0.0.1"
+description = "Check and use the cellular modems on a Linux machine: status, SMS and USSD"
+readme = "README.md"
+license = "GPL-3.0-or-later"
+requires-python = ">=3.12"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+
+[tool.ruff.lint]
+preview = true
+explicit-preview-rules = true
+select = [
+  "E",
+  "F",
+  "I",
+  "B",
+  "UP",
+  "SIM",
+  "N",
+  "RUF",
+  "LOG",
+  "G",
+  "D",
+  "PLR6301",
+]
+# Docstrings are optional.
+ignore = ["D1"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.isort]
+known-first-party = ["simdesk"]
+
+[tool.pyright]
+typeCheckingMode = "basic"
+pythonVersion = "3.12"
+venvPath = "."
+venv = "venv"
+exclude = ["venv", "**/__pycache__"]
+# Don't report gi as missing its source: pygobject-stubs gives the types, and with
+# PYGOBJECT=system, PyGObject is in the system site-packages, outside pyright's search.
+reportMissingModuleSource = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.coverage.run]
+source = ["simdesk"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+
+[tool.commitizen]
+name = "cz_conventional_commits"
