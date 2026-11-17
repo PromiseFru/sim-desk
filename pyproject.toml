@@ -49,6 +49,11 @@ reportMissingModuleSource = false
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+# Deprecation warnings that PyGObject itself raises.
+filterwarnings = [
+  "ignore:'asyncio.AbstractEventLoopPolicy' is deprecated:DeprecationWarning:gi.events",
+  "ignore:GLib.unix_signal_add_full is deprecated:gi.PyGIDeprecationWarning",
+]
 
 [tool.coverage.run]
 source = ["simdesk"]

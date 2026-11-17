@@ -6,15 +6,18 @@ SIM Desk lets you check and use the cellular modems on your Linux machine: see e
 
 - Linux with ModemManager running
 - Python 3.12 or newer
-- PyGObject (`python3-gi`, or [from pip](#installing-pygobject-with-pip-instead))
+- PyGObject 3.50 or newer (`python3-gi`, or [from pip](#installing-pygobject-with-pip-instead))
 - ModemManager's GObject bindings (`gir1.2-modemmanager-1.0`)
 - `make` and `git`
 
-On Ubuntu 24.04 or newer, or Debian 13 or newer:
+On Debian 13 or newer, or Ubuntu 26.04 or newer:
 
 ```bash
 sudo apt install modemmanager python3-gi python3-venv gir1.2-modemmanager-1.0 make git
 ```
+
+> [!NOTE]
+> On Ubuntu 24.04, `python3-gi` is older than 3.50. Run the same command, then set up with [PyGObject from pip](#installing-pygobject-with-pip-instead) instead of the plain `make setup` below.
 
 ## Setup
 
@@ -36,7 +39,7 @@ make setup
 
 ### Installing PyGObject with pip instead
 
-To build PyGObject from PyPI into the venv, for example with a Python other than the system one, install its build dependencies and pass `PYGOBJECT=pip`:
+Use this on Ubuntu 24.04, or to use a Python other than the system one. Install PyGObject's build dependencies and pass `PYGOBJECT=pip` to build it from PyPI into the venv:
 
 ```bash
 sudo apt install libgirepository-2.0-dev libcairo2-dev pkg-config python3-dev build-essential

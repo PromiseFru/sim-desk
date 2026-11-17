@@ -1,4 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
+import itertools
 from dataclasses import dataclass, field
 
 import gi
@@ -7,6 +8,25 @@ import pytest
 gi.require_version("ModemManager", "1.0")
 # pygobject-stubs has no ModemManager types.
 from gi.repository import GLib, ModemManager  # noqa: E402  # pyright: ignore[reportAttributeAccessIssue]
+
+
+class FakeGObject:
+    def __init__(self):
+        self.handlers = {}
+        self._handler_ids = itertools.count(1)
+
+    def connect(self, signal, handler):
+        handler_id = next(self._handler_ids)
+        self.handlers[handler_id] = (signal, handler)
+        return handler_id
+
+    def disconnect(self, handler_id):
+        del self.handlers[handler_id]
+
+    def emit(self, signal, *args):
+        for name, handler in list(self.handlers.values()):
+            if name == signal:
+                handler(self, *args)
 
 
 @dataclass
@@ -18,7 +38,7 @@ class FakeSim:
 
 
 @dataclass
-class FakeModemIface:
+class FakeModemIface(FakeGObject):
     manufacturer: str = "QUALCOMM INCORPORATED"
     model: str = "Snapdragon X55"
     revision: str = "SDX55-1.0"
@@ -28,6 +48,9 @@ class FakeModemIface:
     sim_path: str = "/org/freedesktop/ModemManager1/SIM/0"
     sim: FakeSim | None = field(default_factory=FakeSim)
     sim_error: bool = False
+
+    def __post_init__(self):
+        FakeGObject.__init__(self)
 
     def get_manufacturer(self):
         return self.manufacturer
@@ -50,17 +73,20 @@ class FakeModemIface:
     def dup_sim_path(self):
         return self.sim_path
 
-    def get_sim_sync(self, _cancellable):
+    async def get_sim(self, _cancellable=None):
         if self.sim_error:
             raise GLib.Error("Couldn't read the SIM")
         return self.sim
 
 
 @dataclass
-class Fake3gppIface:
+class Fake3gppIface(FakeGObject):
     imei: str = "860000000000001"
     operator_name: str = "MTN CM"
     operator_code: str = "62401"
+
+    def __post_init__(self):
+        FakeGObject.__init__(self)
 
     def get_imei(self):
         return self.imei
@@ -73,10 +99,13 @@ class Fake3gppIface:
 
 
 @dataclass
-class FakeObject:
+class FakeObject(FakeGObject):
     path: str = "/org/freedesktop/ModemManager1/Modem/0"
     modem: FakeModemIface = field(default_factory=FakeModemIface)
     modem_3gpp: Fake3gppIface | None = field(default_factory=Fake3gppIface)
+
+    def __post_init__(self):
+        FakeGObject.__init__(self)
 
     def get_object_path(self):
         return self.path
@@ -88,20 +117,17 @@ class FakeObject:
         return self.modem_3gpp
 
 
-class FakeMMManager:
-    def __init__(self, objects):
+class FakeMMManager(FakeGObject):
+    def __init__(self, objects, name_owner: str | None = ":1.19"):
+        super().__init__()
         self.objects = objects
-        self.handlers = {}
+        self.name_owner = name_owner
 
     def get_objects(self):
         return self.objects
 
-    def connect(self, signal, handler):
-        self.handlers[signal] = handler
-        return len(self.handlers)
-
-    def emit(self, signal, obj):
-        self.handlers[signal](self, obj)
+    def get_name_owner(self):
+        return self.name_owner
 
 
 @pytest.fixture

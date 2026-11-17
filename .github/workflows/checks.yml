@@ -18,17 +18,21 @@ permissions:
 
 jobs:
   checks:
-    name: Hooks and tests
-    # Runs on Python 3.12 (Ubuntu 24.04's system Python), the oldest supported version.
-    runs-on: ubuntu-24.04
+    name: Hooks and tests (Debian 13)
+    # Debian 13's python3-gi is PyGObject 3.50, the oldest supported.
+    runs-on: ubuntu-latest
+    container: debian:13
     steps:
-      - uses: actions/checkout@v7
-
       - name: Install system packages
         run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            dbus python3-gi python3-venv gir1.2-modemmanager-1.0
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            ca-certificates git make dbus python3-gi python3-venv gir1.2-modemmanager-1.0
+
+      - uses: actions/checkout@v7
+
+      - name: Trust the checkout
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
 
       - uses: actions/cache@v6
         with:
@@ -44,3 +48,23 @@ jobs:
 
       - name: Run tests
         run: make coverage
+
+  pip:
+    name: Tests (Ubuntu 24.04, PyGObject from pip)
+    # Ubuntu 24.04's Python is 3.12, the oldest supported.
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install system packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            dbus python3-venv gir1.2-modemmanager-1.0 \
+            libgirepository-2.0-dev libcairo2-dev pkg-config python3-dev build-essential
+
+      - name: Set up
+        run: make setup PYGOBJECT=pip
+
+      - name: Run tests
+        run: make test
